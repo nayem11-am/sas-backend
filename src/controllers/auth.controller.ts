@@ -11,8 +11,9 @@ const generateRefreshToken = (payload: object) =>
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: true, // Required for sameSite: 'none'
+  secure: true,
   sameSite: 'none' as const,
+  path: '/', // Ensure cookie is accessible on all routes
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
