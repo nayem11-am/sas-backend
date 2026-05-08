@@ -1,110 +1,175 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+import { PrismaClient, Role, GoalStatus, TaskStatus, Priority } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('🌱 Starting database seeding...');
 
-  // 1. Create Main Admin User
-  const hashedPassword = await bcrypt.hash('admin123456', 10);
-  const admin = await prisma.user.upsert({
+  // 0. Cleanup existing mock data to prevent unique constraint errors
+  console.log('🧹 Cleaning up old mock data...');
+  await prisma.announcement.deleteMany({ where: { workspace: { slug: 'main-workspace' } } });
+  await prisma.task.deleteMany({ where: { workspace: { slug: 'main-workspace' } } });
+  await prisma.goal.deleteMany({ where: { workspace: { slug: 'main-workspace' } } });
+
+  // 1. Create a demo user
+  const hashedPassword = await bcrypt.hash('password123', 10);
+  const user = await prisma.user.upsert({
     where: { email: 'admin@saas.com' },
     update: {},
     create: {
       email: 'admin@saas.com',
       password: hashedPassword,
       fullName: 'System Administrator',
+      avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
     },
   });
 
-  // 2. Create Main Workspace
+  console.log(`✅ User created: ${user.email}`);
+
+  // 2. Create a demo workspace
   const workspace = await prisma.workspace.upsert({
     where: { slug: 'main-workspace' },
     update: {},
     create: {
       name: 'Main Workspace',
       slug: 'main-workspace',
-      description: 'Your primary workspace for team collaboration.',
-      ownerId: admin.id,
-      members: {
-        create: {
-          userId: admin.id,
-          role: 'ADMIN',
-        },
-      },
+      ownerId: user.id,
+      accentColor: '#6366f1',
     },
   });
 
-  // 3. Create Demo Goals
-  const goal1 = await prisma.goal.create({
-    data: {
-      title: 'Q2 Product Launch',
-      description: 'Main product launch for the second quarter.',
-      status: 'IN_PROGRESS',
+  console.log(`✅ Workspace created: ${workspace.name}`);
+
+  // 3. Add user as Admin to workspace
+  await prisma.workspaceMember.upsert({
+    where: {
+      userId_workspaceId: {
+        userId: user.id,
+        workspaceId: workspace.id,
+      },
+    },
+    update: {
+      role: Role.ADMIN,
+    },
+    create: {
+      userId: user.id,
+      workspaceId: workspace.id,
+      role: Role.ADMIN,
+    },
+  });
+
+  // 4. Create Mock Goals
+  const goals = [
+    {
+      title: 'Launch SaaS Platform',
+      description: 'Complete all critical tasks for the official launch.',
+      status: GoalStatus.IN_PROGRESS,
       progress: 65,
-      workspaceId: workspace.id,
-      ownerId: admin.id,
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
     },
-  });
-
-  const goal2 = await prisma.goal.create({
-    data: {
-      title: 'Mobile App Redesign',
-      description: 'Update the UI/UX for the mobile application.',
-      status: 'AT_RISK',
-      progress: 30,
-      workspaceId: workspace.id,
-      ownerId: admin.id,
+    {
+      title: 'Acquire 100 Early Adopters',
+      description: 'Focus on marketing and outreach to get our first users.',
+      status: GoalStatus.IN_PROGRESS,
+      progress: 20,
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 60)),
     },
-  });
+    {
+      title: 'Finalize Pricing Model',
+      description: 'Research and set the monthly subscription tiers.',
+      status: GoalStatus.COMPLETED,
+      progress: 100,
+      dueDate: new Date(),
+    },
+  ];
 
-  // 4. Create Demo Tasks
-  await prisma.task.createMany({
-    data: [
-      {
-        title: 'Finalize UI Mockups',
-        status: 'DONE',
-        priority: 'HIGH',
+  for (const goalData of goals) {
+    await prisma.goal.create({
+      data: {
+        ...goalData,
         workspaceId: workspace.id,
-        goalId: goal1.id,
-        creatorId: admin.id,
+        ownerId: user.id,
+        assigneeId: user.id,
       },
-      {
-        title: 'API Integration',
-        status: 'IN_PROGRESS',
-        priority: 'URGENT',
-        workspaceId: workspace.id,
-        goalId: goal1.id,
-        creatorId: admin.id,
-      },
-      {
-        title: 'Setup CI/CD Pipeline',
-        status: 'TODO',
-        priority: 'MEDIUM',
-        workspaceId: workspace.id,
-        creatorId: admin.id,
-      },
-    ],
-  });
+    });
+  }
 
-  // 5. Create Demo Announcements
-  await prisma.announcement.create({
-    data: {
-      title: 'Welcome to the new Platform!',
-      content: 'We have successfully migrated to our custom Express & Prisma backend. Enjoy the new real-time features!',
+  console.log('✅ Mock Goals added');
+
+  // 5. Create Mock Tasks
+  const tasks = [
+    {
+      title: 'Fix Sidebar Mobile Lag',
+      description: 'The sidebar flickers when opening on mobile devices.',
+      status: TaskStatus.DONE,
+      priority: Priority.HIGH,
+    },
+    {
+      title: 'Implement Dark Mode',
+      description: 'Add theme support for dark mode across the platform.',
+      status: TaskStatus.IN_PROGRESS,
+      priority: Priority.MEDIUM,
+    },
+    {
+      title: 'Add Real-time Notifications',
+      description: 'Use Socket.io to push alerts to active users.',
+      status: TaskStatus.TODO,
+      priority: Priority.URGENT,
+    },
+    {
+      title: 'Optimize Database Queries',
+      description: 'Ensure the task board loads in under 200ms.',
+      status: TaskStatus.IN_PROGRESS,
+      priority: Priority.MEDIUM,
+    },
+  ];
+
+  for (const taskData of tasks) {
+    await prisma.task.create({
+      data: {
+        ...taskData,
+        workspaceId: workspace.id,
+        creatorId: user.id,
+        assigneeId: user.id,
+      },
+    });
+  }
+
+  console.log('✅ Mock Tasks added');
+
+  // 6. Create Mock Announcements
+  const announcements = [
+    {
+      title: 'Welcome to the New Platform!',
+      content: 'We have officially migrated to our new decoupled architecture. Enjoy the speed!',
       isPinned: true,
-      workspaceId: workspace.id,
-      authorId: admin.id,
     },
-  });
+    {
+      title: 'Server Maintenance',
+      content: 'Brief downtime expected this Sunday at 2 AM UTC for database optimization.',
+      isPinned: false,
+    },
+  ];
 
-  console.log('✅ Seeding completed successfully!');
+  for (const annData of announcements) {
+    await prisma.announcement.create({
+      data: {
+        ...annData,
+        workspaceId: workspace.id,
+        authorId: user.id,
+      },
+    });
+  }
+
+  console.log('✅ Mock Announcements added');
+
+  console.log('🚀 Database seeding completed successfully!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seeding failed:', e);
+    console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {
