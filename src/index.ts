@@ -20,19 +20,8 @@ const app = express();
 const httpServer = createServer(app);
 
 // --- Middleware ---
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://myfirstfullstack.vercel.app'
-];
-
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: ['http://localhost:3000', 'https://myfirstfullstack.vercel.app'],
   credentials: true,
 }));
 app.use(express.json());
@@ -56,7 +45,7 @@ app.get('/api/health', (req, res) => {
 // --- Socket.io ---
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: ['http://localhost:3000', 'https://myfirstfullstack.vercel.app'],
     methods: ['GET', 'POST'],
     credentials: true,
   },
