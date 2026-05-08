@@ -11,8 +11,8 @@ const generateRefreshToken = (payload: object) =>
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
+  secure: true, // Required for sameSite: 'none'
+  sameSite: 'none' as const,
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
