@@ -59,35 +59,18 @@ async function main() {
     },
   });
 
-  // 4. Create Mock Goals
-  const goals = [
-    {
-      title: 'Launch SaaS Platform',
-      description: 'Complete all critical tasks for the official launch.',
-      status: GoalStatus.IN_PROGRESS,
-      progress: 65,
-      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
-    },
-    {
-      title: 'Acquire 100 Early Adopters',
-      description: 'Focus on marketing and outreach to get our first users.',
-      status: GoalStatus.IN_PROGRESS,
-      progress: 20,
-      dueDate: new Date(new Date().setDate(new Date().getDate() + 60)),
-    },
-    {
-      title: 'Finalize Pricing Model',
-      description: 'Research and set the monthly subscription tiers.',
-      status: GoalStatus.COMPLETED,
-      progress: 100,
-      dueDate: new Date(),
-    },
-  ];
-
-  for (const goalData of goals) {
+  // 4. Create 50 Mock Goals
+  console.log('⏳ Generating 50 goals...');
+  const goalTitles = ['Expansion', 'Migration', 'Optimization', 'Security Audit', 'User Research', 'Brand Refresh', 'API V2', 'Performance Boost'];
+  for (let i = 1; i <= 50; i++) {
+    const title = `${goalTitles[i % goalTitles.length]} Phase ${i}`;
     await prisma.goal.create({
       data: {
-        ...goalData,
+        title,
+        description: `High-level objective for ${title.toLowerCase()}. Goal number ${i}.`,
+        status: i % 4 === 0 ? GoalStatus.COMPLETED : i % 3 === 0 ? GoalStatus.AT_RISK : GoalStatus.IN_PROGRESS,
+        progress: i % 4 === 0 ? 100 : Math.floor(Math.random() * 90),
+        dueDate: new Date(new Date().setDate(new Date().getDate() + (i * 2))),
         workspaceId: workspace.id,
         ownerId: user.id,
         assigneeId: user.id,
@@ -95,40 +78,20 @@ async function main() {
     });
   }
 
-  console.log('✅ Mock Goals added');
-
-  // 5. Create Mock Tasks
-  const tasks = [
-    {
-      title: 'Fix Sidebar Mobile Lag',
-      description: 'The sidebar flickers when opening on mobile devices.',
-      status: TaskStatus.DONE,
-      priority: Priority.HIGH,
-    },
-    {
-      title: 'Implement Dark Mode',
-      description: 'Add theme support for dark mode across the platform.',
-      status: TaskStatus.IN_PROGRESS,
-      priority: Priority.MEDIUM,
-    },
-    {
-      title: 'Add Real-time Notifications',
-      description: 'Use Socket.io to push alerts to active users.',
-      status: TaskStatus.TODO,
-      priority: Priority.URGENT,
-    },
-    {
-      title: 'Optimize Database Queries',
-      description: 'Ensure the task board loads in under 200ms.',
-      status: TaskStatus.IN_PROGRESS,
-      priority: Priority.MEDIUM,
-    },
-  ];
-
-  for (const taskData of tasks) {
+  // 5. Create 150 Mock Tasks
+  console.log('⏳ Generating 150 tasks...');
+  const taskTitles = ['Fix issue', 'Develop feature', 'Review PR', 'Update docs', 'Refactor module', 'Test suite', 'Client meeting', 'UI Polish'];
+  const statuses = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.DONE];
+  const priorities = [Priority.LOW, Priority.MEDIUM, Priority.HIGH, Priority.URGENT];
+  
+  for (let i = 1; i <= 150; i++) {
     await prisma.task.create({
       data: {
-        ...taskData,
+        title: `${taskTitles[i % taskTitles.length]} #${i}`,
+        description: `Detailed sub-task for project execution. Sequence id: ${i}`,
+        status: statuses[i % 3],
+        priority: priorities[i % 4],
+        dueDate: new Date(new Date().setDate(new Date().getDate() + (i % 30))),
         workspaceId: workspace.id,
         creatorId: user.id,
         assigneeId: user.id,
@@ -136,26 +99,14 @@ async function main() {
     });
   }
 
-  console.log('✅ Mock Tasks added');
-
-  // 6. Create Mock Announcements
-  const announcements = [
-    {
-      title: 'Welcome to the New Platform!',
-      content: 'We have officially migrated to our new decoupled architecture. Enjoy the speed!',
-      isPinned: true,
-    },
-    {
-      title: 'Server Maintenance',
-      content: 'Brief downtime expected this Sunday at 2 AM UTC for database optimization.',
-      isPinned: false,
-    },
-  ];
-
-  for (const annData of announcements) {
+  // 6. Create 20 Mock Announcements
+  console.log('⏳ Generating 20 announcements...');
+  for (let i = 1; i <= 20; i++) {
     await prisma.announcement.create({
       data: {
-        ...annData,
+        title: `Internal Update #${i}`,
+        content: `This is an automated announcement for testing workspace feed scroll and performance. ID: ${i}`,
+        isPinned: i <= 3,
         workspaceId: workspace.id,
         authorId: user.id,
       },
